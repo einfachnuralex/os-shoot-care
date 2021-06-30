@@ -7,6 +7,7 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
+	"github.com/gophercloud/gophercloud/pagination"
 	"strings"
 )
 
@@ -142,4 +143,50 @@ func (g *Gandalf) GetServerLostVolumes(serverID string) ([]volumes.Volume, error
 	}
 
 	return faultyVolumes, nil
+}
+
+func (g *Gandalf) GetVolumeAttachmentsForVolume(volumeId string) ([]volumes.Attachment, []servers.Server, error) {
+	attachment, err := g.getVolumeAttachmentsFromVolume(volumeId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	servers, err := g.getVolumeAttachmentsFromServersForVolume(volumeId)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return attachment, servers, nil
+}
+
+func (g *Gandalf) getVolumeAttachmentsFromVolume(volumeId string) ([]volumes.Attachment, error) {
+	vol, err := volumes.Get(g.Storage, volumeId).Extract()
+	if err != nil {
+		return nil, err
+	}
+	if vol == nil {
+		return nil, fmt.Errorf("nilpointer for volume %s", volumeId)
+	}
+	return vol.Attachments, nil
+}
+
+func (g *Gandalf) getVolumeAttachmentsFromServersForVolume(volumeId string) ([]servers.Server, error) {
+	serverList := make([]servers.Server, 0)
+	err := servers.List(g.Compute, servers.ListOpts{}).EachPage(func(page pagination.Page) (bool, error) {
+		extractedServers, _ := servers.ExtractServers(page)
+
+		for _, server := range extractedServers {
+			for _, attachment := range server.AttachedVolumes {
+				if attachment.ID == volumeId {
+					serverList = append(serverList, server)
+				}
+			}
+		}
+		return true, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return serverList, nil
 }

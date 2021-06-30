@@ -12,6 +12,7 @@ import (
 var ga shootcare.Gandalf
 var Name string
 var Project string
+var VolumeID string
 
 // getCmd represents the get command
 var getCmd = &cobra.Command{
@@ -36,8 +37,17 @@ var checkCMD = &cobra.Command{
 	},
 }
 
+var checkVolume = &cobra.Command{
+	Use:   "volume-attachments",
+	Short: "Checks volume for attaches on server object",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return GetVolumeAttachments()
+	},
+}
+
 func init() {
 	utils.CreateOSClients(&ga)
+	getCmd.AddCommand(checkVolume)
 	rootCmd.AddCommand(getCmd, checkCMD)
 
 	checkCMD.Flags().StringVarP(&Name, "name", "n", "", "Name of shoot")
@@ -49,6 +59,9 @@ func init() {
 	getCmd.Flags().StringVarP(&Project, "project", "p", "", "Project ID")
 	getCmd.MarkFlagRequired("name")
 	getCmd.MarkFlagRequired("project")
+
+	checkVolume.Flags().StringVarP(&VolumeID, "volume", "v", "", "ID of volume")
+	checkVolume.MarkFlagRequired("volume")
 }
 
 func getAll() error {
@@ -120,6 +133,42 @@ func CheckAll() error {
 	//for _, vm := range vms2 {
 	//	fmt.Println(vm.Name, vm.Tags)
 	//}
+
+	return nil
+}
+
+func GetVolumeAttachments() error {
+	volumeAttachment, serverList, err := ga.GetVolumeAttachmentsForVolume(VolumeID)
+	if err != nil {
+		fmt.Println("error net: ", err)
+	}
+
+	if len(volumeAttachment) == 0 {
+		fmt.Println("Volume reports no attachments")
+	} else {
+		fmt.Println("Volume reports server:")
+	}
+	for _, attachment := range volumeAttachment {
+		fmt.Println(attachment.ServerID)
+	}
+
+	fmt.Println("")
+
+	if len(serverList) == 0 {
+		fmt.Println("No server reports attachment")
+	} else {
+		fmt.Println("Servers report attachments:")
+	}
+	for _, server := range serverList {
+		timesAttached := 0
+		for _, attachedVolume := range server.AttachedVolumes {
+			if attachedVolume.ID == VolumeID {
+				timesAttached++
+			}
+		}
+
+		fmt.Printf("%s (%d times)", server.ID, timesAttached)
+	}
 
 	return nil
 }
