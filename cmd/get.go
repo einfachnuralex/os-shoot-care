@@ -25,9 +25,25 @@ var getCmd = &cobra.Command{
 	},
 }
 
+var checkCMD = &cobra.Command{
+	Use:   "check",
+	Short: "Check shoot resources",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := CheckAll(); err != nil {
+			return err
+		}
+		return nil
+	},
+}
+
 func init() {
 	utils.CreateOSClients(&ga)
-	rootCmd.AddCommand(getCmd)
+	rootCmd.AddCommand(getCmd, checkCMD)
+
+	checkCMD.Flags().StringVarP(&Name, "name", "n", "", "Name of shoot")
+	checkCMD.Flags().StringVarP(&Project, "project", "p", "", "Project ID")
+	checkCMD.MarkFlagRequired("name")
+	checkCMD.MarkFlagRequired("project")
 
 	getCmd.Flags().StringVarP(&Name, "name", "n", "", "Name of shoot")
 	getCmd.Flags().StringVarP(&Project, "project", "p", "", "Project ID")
@@ -72,5 +88,38 @@ func getAll() error {
 		}
 	}
 	w.Flush()
+	return nil
+}
+
+func CheckAll() error {
+	fmt.Println(Name, Project)
+	vms, err := ga.GetInstancesByName(Name, Project)
+	if err != nil {
+		fmt.Println("error net: ", err)
+	}
+	//fmt.Println(vms)
+	for _, vm := range vms {
+		lovol, err := ga.GetServerLostVolumes(vm.ID)
+		if err != nil {
+			fmt.Println("error: ", err)
+			continue
+		}
+		if len(lovol) > 0 {
+			fmt.Println("Server: ", vm.Name, vm.ID)
+			for _, vol := range lovol {
+				fmt.Println(vol.Name, vol.ID)
+			}
+		}
+	}
+
+	//vms2, err2 := ga.GetInstancesByName(Name, Project)
+	//if err2 != nil {
+	//	return err2
+	//}
+	//fmt.Println(vms2)
+	//for _, vm := range vms2 {
+	//	fmt.Println(vm.Name, vm.Tags)
+	//}
+
 	return nil
 }

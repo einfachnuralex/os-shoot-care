@@ -3,6 +3,7 @@ package shootcare
 import (
 	"fmt"
 	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/blockstorage/v2/volumes"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
@@ -44,8 +45,9 @@ func (g *Gandalf) GetNetworkByName(name string, projectId string) (networks.Netw
 
 func (g *Gandalf) GetInstancesByName(name string, projectId string) ([]servers.Server, error) {
 	listOpts := servers.ListOpts{
+		Name: name + ".*",
+		//AllTenants:   true,
 		TenantID: projectId,
-		Name:     name,
 	}
 
 	allPages, err := servers.List(g.Compute, listOpts).AllPages()
@@ -116,4 +118,28 @@ func (g *Gandalf) GetPortsByNetwork(net string, project string) ([]ports.Port, e
 	}
 
 	return allPorts, nil
+}
+
+func (g *Gandalf) GetServerLostVolumes(serverID string) ([]volumes.Volume, error) {
+	var faultyVolumes []volumes.Volume
+	srv, err := servers.Get(g.Compute, serverID).Extract()
+	if err != nil {
+		return []volumes.Volume{}, err
+	}
+	vols := srv.AttachedVolumes
+	for _, vol := range vols {
+		gvol, err := volumes.Get(g.Storage, vol.ID).Extract()
+
+		if err == nil {
+			f := gvol.Attachments
+			for _, g := range f {
+				if g.ServerID != srv.ID {
+					faultyVolumes = append(faultyVolumes, *gvol)
+				}
+
+			}
+		}
+	}
+
+	return faultyVolumes, nil
 }
