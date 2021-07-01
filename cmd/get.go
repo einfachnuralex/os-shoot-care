@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/einfachnuralex/os-shoot-care/openstack"
 	"github.com/einfachnuralex/os-shoot-care/shootcare"
-	"github.com/einfachnuralex/os-shoot-care/utils"
 	"github.com/spf13/cobra"
 	"os"
 	"text/tabwriter"
@@ -46,7 +46,7 @@ var checkVolume = &cobra.Command{
 }
 
 func init() {
-	utils.CreateOSClients(&ga)
+	openstack.CreateClients(&ga)
 	getCmd.AddCommand(checkVolume)
 	rootCmd.AddCommand(getCmd, checkCMD)
 

@@ -1,4 +1,4 @@
-package utils
+package openstack
 
 import (
 	"github.com/einfachnuralex/os-shoot-care/shootcare"
@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func CreateOSClients(ga *shootcare.Gandalf) {
+func CreateClients(ga *shootcare.Gandalf) {
 	opts, err := openstack.AuthOptionsFromEnv()
 	if err != nil {
 		log.Fatalf("get env: %v", err)
@@ -43,4 +43,18 @@ func CreateOSClients(ga *shootcare.Gandalf) {
 	if err != nil {
 		log.Fatalf("create provider: %v", err)
 	}
+}
+
+func CreateComputeClient() (*gophercloud.ServiceClient,error) {
+	opts, err := openstack.AuthOptionsFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	provider, err := openstack.AuthenticatedClient(opts)
+	if err != nil {
+		return nil, err
+	}
+	return openstack.NewComputeV2(provider, gophercloud.EndpointOpts{
+		Region: "RegionOne",
+	})
 }
