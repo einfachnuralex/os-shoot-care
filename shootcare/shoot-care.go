@@ -151,7 +151,7 @@ func (g *Gandalf) GetVolumeAttachmentsForVolume(volumeId string) ([]volumes.Atta
 		return nil, nil, err
 	}
 
-	servers, err := g.getVolumeAttachmentsFromServersForVolume(volumeId)
+	servers, err := g.getServerWithAttachmentForVolume(volumeId)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -170,23 +170,39 @@ func (g *Gandalf) getVolumeAttachmentsFromVolume(volumeId string) ([]volumes.Att
 	return vol.Attachments, nil
 }
 
-func (g *Gandalf) getVolumeAttachmentsFromServersForVolume(volumeId string) ([]servers.Server, error) {
-	serverList := make([]servers.Server, 0)
-	err := servers.List(g.Compute, servers.ListOpts{}).EachPage(func(page pagination.Page) (bool, error) {
+func (g *Gandalf) getServerWithAttachmentForVolume(volumeId string) ([]servers.Server, error) {
+	hasVolumeAttachmentFilter := NewServerPageForHasVolumeAttachmentFilter()
+	err := g.getAllServerAsPager().EachPage(hasVolumeAttachmentFilter.filter(volumeId))
+	if err != nil {
+		return nil, err
+	}
+
+	return hasVolumeAttachmentFilter.serverList, nil
+}
+
+func (g *Gandalf) getAllServerAsPager() pagination.Pager {
+	return servers.List(g.Compute, servers.ListOpts{})
+}
+
+type serverPageForHasVolumeAttachmentFilter struct {
+	serverList []servers.Server
+}
+
+func NewServerPageForHasVolumeAttachmentFilter() *serverPageForHasVolumeAttachmentFilter {
+	return &serverPageForHasVolumeAttachmentFilter{[]servers.Server{}}
+}
+
+func (r *serverPageForHasVolumeAttachmentFilter) filter(volumeId string) func(page pagination.Page) (bool, error) {
+	return func(page pagination.Page) (bool, error) {
 		extractedServers, _ := servers.ExtractServers(page)
 
 		for _, server := range extractedServers {
 			for _, attachment := range server.AttachedVolumes {
 				if attachment.ID == volumeId {
-					serverList = append(serverList, server)
+					r.serverList = append(r.serverList, server)
 				}
 			}
 		}
 		return true, nil
-	})
-	if err != nil {
-		return nil, err
 	}
-
-	return serverList, nil
 }
