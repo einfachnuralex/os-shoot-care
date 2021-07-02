@@ -60,6 +60,10 @@ type Node struct {
 	server openstack.ExtendedServer
 }
 
+func (n *Node) Name() string {
+	return n.server.Name
+}
+
 func (n *Node) Type() string {
 	return "Node"
 }

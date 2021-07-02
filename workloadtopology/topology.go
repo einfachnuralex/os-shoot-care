@@ -19,12 +19,6 @@ type TopologyBuilder struct {
 	gardenClient client.Client
 }
 
-//   --Shoot--
-//   |		|
-// Pod <=> Node <=> Hypervisor
-
-// Pod <=> Hypervisor
-
 func NewTopologyBuilder(serverClient openstack.ServerClient, gardenClient client.Client) *TopologyBuilder {
 	return &TopologyBuilder{server: serverClient, gardenClient: gardenClient}
 }
