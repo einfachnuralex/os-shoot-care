@@ -1,5 +1,10 @@
 package workloadtopology
 
+import (
+	"github.com/stackitcloud/gophercloud-wrapper/pkg/openstack"
+	corev1 "k8s.io/api/core/v1"
+)
+
 type TreeNode interface {
 	Type() string
 	Children() []TreeNode
@@ -52,8 +57,22 @@ func (h *Hypervisor) Type() string {
 
 type Node struct {
 	BaseNode
+	server openstack.ExtendedServer
 }
 
 func (n *Node) Type() string {
 	return "Node"
+}
+
+type Pod struct {
+	BaseNode
+	pod corev1.Pod
+}
+
+func (n *Pod) Name() string {
+	return n.pod.ObjectMeta.Name
+}
+
+func (n *Pod) Type() string {
+	return "Pod"
 }
