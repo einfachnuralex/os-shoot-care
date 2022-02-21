@@ -1,4 +1,4 @@
-package shootcare
+package shoot
 
 import (
 	"fmt"
@@ -11,13 +11,13 @@ import (
 	"strings"
 )
 
-type Gandalf struct {
+type OSClients struct {
 	Network *gophercloud.ServiceClient
 	Compute *gophercloud.ServiceClient
 	Storage *gophercloud.ServiceClient
 }
 
-func (g *Gandalf) GetNetworkByName(name string, projectId string) (networks.Network, error) {
+func (g *OSClients) GetNetworkByName(name string, projectId string) (networks.Network, error) {
 	listOpts := networks.ListOpts{
 		TenantID: projectId,
 		Name:     name,
@@ -44,7 +44,7 @@ func (g *Gandalf) GetNetworkByName(name string, projectId string) (networks.Netw
 	return allNetworks[0], nil
 }
 
-func (g *Gandalf) GetInstancesByName(name string, projectId string) ([]servers.Server, error) {
+func (g *OSClients) GetInstancesByName(name string, projectId string) ([]servers.Server, error) {
 	listOpts := servers.ListOpts{
 		Name: name + ".*",
 		//AllTenants:   true,
@@ -64,7 +64,7 @@ func (g *Gandalf) GetInstancesByName(name string, projectId string) ([]servers.S
 	return allServers, nil
 }
 
-func (g *Gandalf) GetInstancesByNetwork(net string, projectId string) ([]servers.Server, error) {
+func (g *OSClients) GetInstancesByNetwork(net string, projectId string) ([]servers.Server, error) {
 	listOpts := ports.ListOpts{
 		NetworkID: net,
 		ProjectID: projectId,
@@ -94,7 +94,7 @@ func (g *Gandalf) GetInstancesByNetwork(net string, projectId string) ([]servers
 	return allServers, nil
 }
 
-func (g *Gandalf) getServer(id string) (servers.Server, error) {
+func (g *OSClients) getServer(id string) (servers.Server, error) {
 	srv, err := servers.Get(g.Compute, id).Extract()
 	if err != nil {
 		return servers.Server{}, err
@@ -102,7 +102,7 @@ func (g *Gandalf) getServer(id string) (servers.Server, error) {
 	return *srv, nil
 }
 
-func (g *Gandalf) GetPortsByNetwork(net string, project string) ([]ports.Port, error) {
+func (g *OSClients) GetPortsByNetwork(net string, project string) ([]ports.Port, error) {
 	listOpts := ports.ListOpts{
 		NetworkID: net,
 		ProjectID: project,
@@ -121,7 +121,7 @@ func (g *Gandalf) GetPortsByNetwork(net string, project string) ([]ports.Port, e
 	return allPorts, nil
 }
 
-func (g *Gandalf) GetServerLostVolumes(serverID string) ([]volumes.Volume, error) {
+func (g *OSClients) GetServerLostVolumes(serverID string) ([]volumes.Volume, error) {
 	var faultyVolumes []volumes.Volume
 	srv, err := servers.Get(g.Compute, serverID).Extract()
 	if err != nil {
@@ -145,7 +145,7 @@ func (g *Gandalf) GetServerLostVolumes(serverID string) ([]volumes.Volume, error
 	return faultyVolumes, nil
 }
 
-func (g *Gandalf) GetVolumeAttachmentsForVolume(volumeId string) ([]volumes.Attachment, []servers.Server, error) {
+func (g *OSClients) GetVolumeAttachmentsForVolume(volumeId string) ([]volumes.Attachment, []servers.Server, error) {
 	attachment, err := g.getVolumeAttachmentsFromVolume(volumeId)
 	if err != nil {
 		return nil, nil, err
@@ -159,7 +159,7 @@ func (g *Gandalf) GetVolumeAttachmentsForVolume(volumeId string) ([]volumes.Atta
 	return attachment, servers, nil
 }
 
-func (g *Gandalf) getVolumeAttachmentsFromVolume(volumeId string) ([]volumes.Attachment, error) {
+func (g *OSClients) getVolumeAttachmentsFromVolume(volumeId string) ([]volumes.Attachment, error) {
 	vol, err := volumes.Get(g.Storage, volumeId).Extract()
 	if err != nil {
 		return nil, err
@@ -170,7 +170,7 @@ func (g *Gandalf) getVolumeAttachmentsFromVolume(volumeId string) ([]volumes.Att
 	return vol.Attachments, nil
 }
 
-func (g *Gandalf) getServerWithAttachmentForVolume(volumeId string) ([]servers.Server, error) {
+func (g *OSClients) getServerWithAttachmentForVolume(volumeId string) ([]servers.Server, error) {
 	hasVolumeAttachmentFilter := NewServerPageForHasVolumeAttachmentFilter()
 	err := g.getAllServerAsPager().EachPage(hasVolumeAttachmentFilter.filter(volumeId))
 	if err != nil {
@@ -180,7 +180,7 @@ func (g *Gandalf) getServerWithAttachmentForVolume(volumeId string) ([]servers.S
 	return hasVolumeAttachmentFilter.serverList, nil
 }
 
-func (g *Gandalf) getAllServerAsPager() pagination.Pager {
+func (g *OSClients) getAllServerAsPager() pagination.Pager {
 	return servers.List(g.Compute, servers.ListOpts{})
 }
 

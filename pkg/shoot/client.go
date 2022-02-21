@@ -1,13 +1,12 @@
-package utils
+package shoot
 
 import (
-	"github.com/einfachnuralex/os-shoot-care/shootcare"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"log"
 )
 
-func CreateOSClients(ga *shootcare.Gandalf) {
+func CreateOSClients(ga *OSClients) {
 	opts, err := openstack.AuthOptionsFromEnv()
 	if err != nil {
 		log.Fatalf("get env: %v", err)
@@ -30,13 +29,7 @@ func CreateOSClients(ga *shootcare.Gandalf) {
 	if err != nil {
 		log.Fatalf("create provider: %v", err)
 	}
-	//fmt.Println(ga.Compute.Microversion)
-	////ga.Compute.Microversion = "2.60"
-	//fmt.Println(ga.Compute.Microversion)
-	//fmt.Println(ga.Compute.Endpoint)
-	////ga.Compute.Endpoint = "https://platform.cloud.schwarz:8774/v2.6/"
-	//fmt.Println(ga.Compute.Endpoint)
-	// create storage
+
 	ga.Storage, err = openstack.NewBlockStorageV2(provider, gophercloud.EndpointOpts{
 		Region: "RegionOne",
 	})
