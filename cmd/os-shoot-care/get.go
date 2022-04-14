@@ -1,15 +1,14 @@
-package cmd
+package main
 
 import (
 	"fmt"
-	"github.com/einfachnuralex/os-shoot-care/shootcare"
-	"github.com/einfachnuralex/os-shoot-care/utils"
+	"github.com/einfachnuralex/os-shoot-care/pkg/shoot"
 	"github.com/spf13/cobra"
 	"os"
 	"text/tabwriter"
 )
 
-var ga shootcare.Gandalf
+var ga shoot.OSClients
 var Name string
 var Project string
 var VolumeID string
@@ -46,7 +45,7 @@ var checkVolume = &cobra.Command{
 }
 
 func init() {
-	utils.CreateOSClients(&ga)
+	shoot.CreateOSClients(&ga)
 	getCmd.AddCommand(checkVolume)
 	rootCmd.AddCommand(getCmd, checkCMD)
 
